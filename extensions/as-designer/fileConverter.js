@@ -3,9 +3,9 @@
 // Description: A collection of tools for processing and converting local and remote files, including audio and image format transformations, microphone capture, and text-based document generation.
 // By: as_designer <https://scratch.mit.edu/users/as_designer/>
 // License: MPL-2.0
-/* eslint-disable extension/check-can-fetch */
 /* eslint-disable max-len */
 /* prettier-ignore */
+/* eslint-disable extension/check-can-fetch */
 (function (Scratch) {
     "use strict";
 
@@ -407,8 +407,30 @@
         }
 
         async convertImageUrlToFormat(args) {
-            // Placeholder wrapper mapping block definition safely
-            console.log("Remote image layer process invoked:", args.IMAGE_URL);
+            try {
+                const url = args.IMAGE_URL;
+                if (!(await Scratch.canFetch(url))) {
+                    console.error("Permission denied to fetch URL:", url);
+                    return;
+                }
+                const response = await Scratch.fetch(url);
+                const blob = await response.blob();
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    canvas.getContext("2d").drawImage(img, 0, 0);
+                    const fileExt = args.FORMAT.split("/")[1] || "png";
+                    this._executeDownload(
+                        canvas.toDataURL(args.FORMAT),
+                        `${args.FILENAME}.${fileExt}`,
+                    );
+                };
+                img.src = URL.createObjectURL(blob);
+            } catch (pipelineErr) {
+                console.error("Image asset network URL pipeline failed:", pipelineErr);
+            }
         }
 
         startAudioCapture() {
