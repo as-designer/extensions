@@ -304,9 +304,10 @@
                         canvas.width = img.width;
                         canvas.height = img.height;
                         canvas.getContext("2d").drawImage(img, 0, 0);
+                        const fileExt = args.FORMAT.split("/")[1] || "png";
                         this._executeDownload(
                             canvas.toDataURL(args.FORMAT),
-                            `${args.FILENAME}.${args.FORMAT.split("/")}`,
+                            `${args.FILENAME}.${fileExt}`,
                         );
                     };
                     img.src = event.target.result;
@@ -315,13 +316,12 @@
             });
         }
 
-
         _bufferToWavChannelMatrix(buffer) {
             const numOfChan = buffer.numberOfChannels;
             const sampleRate = buffer.sampleRate;
             const format = 1;
             const bitDepth = 16;
-            let result =
+            const result =
                 numOfChan === 2
                     ? this._interleaveChannels(
                         buffer.getChannelData(0),
@@ -350,7 +350,7 @@
             let index = 44;
             const volumeLimit = result.length;
             for (let i = 0; i < volumeLimit; i++) {
-                let sample = Math.max(-1, Math.min(1, result[i]));
+                const sample = Math.max(-1, Math.min(1, result[i]));
                 view.setInt16(
                     index,
                     sample < 0 ? sample * 0x8000 : sample * 0x7fff,
@@ -364,8 +364,8 @@
         _interleaveChannels(inputL, inputR) {
             const length = inputL.length + inputR.length;
             const result = new Float32Array(length);
-            let index = 0,
-                inputIndex = 0;
+            let index = 0;
+            let inputIndex = 0;
             while (index < length) {
                 result[index++] = inputL[inputIndex];
                 result[index++] = inputR[inputIndex];
@@ -406,6 +406,11 @@
             }
         }
 
+        async convertImageUrlToFormat(args) {
+            // Placeholder wrapper mapping block definition safely
+            console.log("Remote image layer process invoked:", args.IMAGE_URL);
+        }
+
         startAudioCapture() {
             if (mediaRecorder && mediaRecorder.state === "recording") return;
             navigator.mediaDevices
@@ -441,6 +446,7 @@
                 ? "true"
                 : "false";
         }
+
         downloadTextFile(args) {
             this._executeDownload(
                 URL.createObjectURL(
@@ -453,9 +459,9 @@
         convertJsonToCsvAndDownload(args) {
             try {
                 const parsed = JSON.parse(args.JSON_STR);
-                let matrix = Array.isArray(parsed) ? parsed : [parsed];
+                const matrix = Array.isArray(parsed) ? parsed : [parsed];
                 if (matrix.length === 0) return;
-                const headers = Object.keys(matrix);
+                const headers = Object.keys(matrix[0]);
                 const rows = [headers.join(",")];
                 for (const r of matrix) {
                     rows.push(
